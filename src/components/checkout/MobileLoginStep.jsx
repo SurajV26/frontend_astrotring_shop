@@ -1,0 +1,107 @@
+// src/components/checkout/MobileLoginStep.jsx
+import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { userProfile, userVerifyLoginOtp } from '../../redux/slices/userAuthSlice';
+import { toast } from 'react-toastify';
+import { api } from '../../redux/baseApi';
+import { mergeGuestCart, fetchCart } from '../../redux/slices/cartSlice';
+
+const MobileLoginStep = ({ onLoginSuccess, onSignupClick }) => {
+  const dispatch = useDispatch();
+  const [step, setStep] = useState('email');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!email) return toast.error('Enter your email');
+    setLoading(true);
+    try {
+      await api.post('/user/login', { email });
+      setStep('otp');
+      toast.success('OTP sent');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Email not registered');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp) return toast.error('Enter OTP');
+    setLoading(true);
+    try {
+      await dispatch(userVerifyLoginOtp({ email, otp })).unwrap();
+      await dispatch(userProfile()).unwrap();
+      await dispatch(mergeGuestCart()).unwrap();
+      await dispatch(fetchCart());
+      toast.success('Logged in');
+      onLoginSuccess();
+    } catch (err) {
+      toast.error(err || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold text-gray-800">Login to Checkout</h2>
+      {step === 'email' ? (
+        <form onSubmit={handleSendOtp} className="space-y-4">
+          <input
+          name='email'
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email address"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 transition disabled:opacity-50"
+          >
+            {loading ? 'Sending...' : 'Send OTP'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <input
+            type="text"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="6-digit OTP"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700"
+          >
+            {loading ? 'Verifying...' : 'Login'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStep('email'); setOtp(''); }}
+            className="w-full text-amber-600  text-sm hover:underline"
+          >
+            ← Back to email
+          </button>
+        </form>
+      )}
+      <p className="text-center text-gray-500">
+        New user?{' '}
+        <button onClick={onSignupClick} className="text-amber-600 font-medium hover:underline">
+          Create account
+        </button>
+      </p>
+    </div>
+  );
+};
+
+export default MobileLoginStep;

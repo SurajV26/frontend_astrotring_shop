@@ -35,16 +35,12 @@ const OrderSuccessPage = () => {
     };
   }, [dispatch, orderId]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-<<<<<<< HEAD
-  
-=======
+  // const handlePrint = () => {
+  //   window.print();
+  // };
 
 
 
->>>>>>> 23d695717c10b35a4ebcd8578133c4674b4851b8
   // Loading state
   if (loading) {
     return <Loader data="Loading order details..." />;
@@ -283,9 +279,8 @@ const OrderSuccessPage = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
           <Link
-            to="/invoice"
-            state={{ orderData: orderId }}
-            
+            to={`/invoice/${orderId}`}
+            target='_blank'
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
           >

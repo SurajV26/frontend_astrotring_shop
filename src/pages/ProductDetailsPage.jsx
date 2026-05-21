@@ -27,7 +27,7 @@ import {
 } from "../redux/slices/productSlice";
 import Loader from "@/components/common/Loader";
 import StarRating from "@/components/common/StarRating";
-import { openLoginModal } from "@/redux/slices/uiSlice";
+import { openCartDrawer, openLoginModal } from "@/redux/slices/uiSlice";
 
 // Extracted components
 import ProductYouMayAlsoLike from "@/components/product/ProductYouMayAlsoLike";
@@ -310,6 +310,7 @@ useEffect(() => {
       })).unwrap();
       toast.success(`${product?.name} added to cart!`);
       dispatch(fetchCart());
+      dispatch(openCartDrawer())
     } catch (err) {
       toast.error(err || "Failed to add to cart");
     }
@@ -326,7 +327,7 @@ useEffect(() => {
         image: product.image,
       })).unwrap();
       toast.success(`${product?.name} added to cart!`);
-      navigate('/cart'); // redirect to cart page
+      dispatch(openCartDrawer()) // redirect to cart page
     } catch (err) {
       toast.error(err || "Failed to add to cart");
     }
@@ -561,7 +562,7 @@ useEffect(() => {
                 <Truck className="w-5 h-5 text-gray-500" />
                 <div className="text-xs">
                   <p className="font-semibold">Free Shipping</p>
-                  <p className="text-gray-500">on ₹800+</p>
+                  <p className="text-gray-500">on ₹799+</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

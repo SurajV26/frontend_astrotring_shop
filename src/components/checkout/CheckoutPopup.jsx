@@ -1,5 +1,5 @@
 // src/components/checkout/CheckoutPopup.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { ArrowLeft, X, ChevronDown, ChevronUp } from 'lucide-react';
 import logo from '@/assets/logo.png';
@@ -7,6 +7,7 @@ import MobileLoginStep from './MobileLoginStep';
 import SignupStep from './SignupStep';
 import AddressStep from './AddressStep';
 import PaymentStep from './PaymentStep';
+import { api } from '@/redux/baseApi';
 
 const CheckoutPopup = ({ isOpen, onClose }) => {
   const { isLoggedIn } = useSelector((state) => state.userAuth);
@@ -15,17 +16,75 @@ const CheckoutPopup = ({ isOpen, onClose }) => {
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
   const [showCancelPopup, setShowCancelPopup] = useState(false);
-  const paymentRef = useRef();
+  const [codCharge, setCodCharge] = useState(0);
+  const [isCodLoading, setIsCodLoading] = useState(false);
 
-  const SHIPPING_CHARGES = +import.meta.env.VITE_SHIPING_CHARGES; // "149"
-const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
+  const [apiDeliveryCharge, setApiDeliveryCharge] = useState(null);
+  const paymentRef = useRef();
+  console.log("paymentref", paymentRef)
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('online'); // 'online' or 'cod'
+  // const COD_SURCHARGE = +import.meta.env.VITE_COD_SURCHARGE;
+  console.log("cartitems", cartItems)
+
+  // cod charge fetch
+  useEffect(() => {
+    if (selectedPaymentMethod === 'cod' && selectedAddressId) {
+      const fetchCodCharge = async () => {
+        setIsCodLoading(true);
+        try {
+          const { data } = await api.get('/store/cod-charge', {
+            address_id: selectedAddressId,
+          });
+          console.log("codcharge",data)
+          if (data.status) setCodCharge(data.cod_charge);
+        } catch (err) {
+          console.error('Failed to fetch COD charge', err);
+        } finally {
+          setIsCodLoading(false);
+        }
+      };
+      fetchCodCharge();
+    } else {
+      setCodCharge(0);
+    }
+  }, [selectedPaymentMethod, selectedAddressId]);
+
+  useEffect(() => {
+    if (!selectedAddressId) return;
+
+    const fetchDeliveryCharge = async () => {
+      try {
+        const { data } = await api.post('/store/calculate-summary', {
+          address_id: selectedAddressId,
+          coupon_code: appliedCoupon?.code || null,
+        });
+        if (data.status) setApiDeliveryCharge(data.breakdown.delivery_charge);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchDeliveryCharge();
+  }, [selectedAddressId, appliedCoupon]);
+
+  // const SHIPPING_CHARGES = +import.meta.env.VITE_SHIPING_CHARGES; // "149"
+  const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
 
   if (!isOpen) return null;
 
-  const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-  const shipping = subtotal >= MIN_FREE_SHIPPING ? 0 : SHIPPING_CHARGES;
+  const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.quantity),
+    0);
+
+  console.log(subtotal)
+  const shipping = subtotal >= MIN_FREE_SHIPPING ? 0 : apiDeliveryCharge;
+  console.log(MIN_FREE_SHIPPING)
+  console.log(shipping)
+
 
   const grandTotal = subtotal + shipping - couponDiscount;
+  // For display, add surcharge if COD
+  const displayTotal = selectedPaymentMethod === 'cod' ? grandTotal + codCharge : grandTotal;
 
   const handleBack = () => {
     if (step === 'login') onClose();
@@ -63,14 +122,14 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
           {/* back button */}
-          <button onClick={handleBack} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200">
-            <ArrowLeft size={20} className="text-gray-600" />
+          <button onClick={handleBack} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer">
+            <ArrowLeft size={20} className="text-gray-600 " />
           </button>
           <img src={logo} alt="Astrotring" className="h-8" />
           {/* cross button */}
           <button
             onClick={() => setShowCancelPopup(true)}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200 cursor-pointer"
           >
             <X size={20} className="text-gray-600" />
           </button>
@@ -88,14 +147,14 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
 
               {appliedCoupon && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Coupon</span>}
             </div>
-            <span className="text-xs font-bold text-amber-600">₹{grandTotal.toLocaleString()}</span>
+            <span className="text-xs font-bold text-amber-600">₹{displayTotal.toLocaleString()}</span>
 
           </button>
 
           {isSummaryOpen && (
             <div className="px-5 pb-4 space-y-4 max-h-50 overflow-y-auto border-t border-gray-100 scrollbar-hide">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex gap-3 items-center">
+                <div key={item.item_id} className="flex gap-3 items-center">
                   <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-lg border border-gray-200" />
                   <div className="flex-1">
                     <p className="font-sm text-sm text-gray-800">{item.name}</p>
@@ -112,24 +171,33 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
                   <span>Subtotal</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
-                </div>
+                {shipping !== null && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                  </div>
+                )}
                 {appliedCoupon && (
                   <div className="flex justify-between text-green-600">
                     <span>Coupon ({appliedCoupon.code})</span>
                     <span>-₹{couponDiscount.toLocaleString()}</span>
                   </div>
                 )}
+                {selectedPaymentMethod === 'cod' && (
+                  <div className="flex justify-between text-amber-600 text-sm">
+                    <span>COD charge</span>
+                    <span>{isCodLoading ? '...' : `₹${codCharge}`}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-gray-800 pt-2 border-t">
                   <span>Total</span>
-                  <span>₹{grandTotal.toLocaleString()}</span>
+                  <span>₹{displayTotal.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           )}
         </div>
+
 
         {/* Step Content */}
         <div className="flex-1 overflow-y-auto p-5 scrollbar-hide">
@@ -138,8 +206,20 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
           {step === 'signup' && <SignupStep onSignupSuccess={handleSignupSuccess} onBackToLogin={() => setStep('login')} />}
 
           {step === 'address' && <AddressStep selectedAddressId={selectedAddressId} onSelectAddress={setSelectedAddressId} />}
-          
-          {step === 'payment' && <PaymentStep ref={paymentRef} selectedAddressId={selectedAddressId} onOrderComplete={handleOrderComplete} />}
+
+          {step === 'payment' &&
+            <PaymentStep
+              ref={paymentRef}
+              selectedAddressId={selectedAddressId}
+              onOrderComplete={handleOrderComplete}
+              deliveryCharge={shipping}
+              grandTotal={grandTotal}
+              codCharge={codCharge}
+              isCodLoading={isCodLoading}
+              selectedPaymentMethod={selectedPaymentMethod}
+              onPaymentMethodChange={setSelectedPaymentMethod}
+
+            />}
         </div>
 
         {/* Fixed Bottom Button */}
@@ -154,7 +234,10 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
             </button>
           </div>
         )}
-      </div>{/* Cancel Payment Popup */}
+
+      </div>
+
+      {/* Cancel Payment Popup */}
       {showCancelPopup && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-sm shadow-2xl animate-fadeIn">
@@ -164,7 +247,7 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
             </p>
 
             <div className="flex gap-10 justify-between">
-               {/* YES BUTTON */}
+              {/* YES BUTTON */}
               <div
                 onClick={onClose}
                 className="flex-1 text-gray-400 font-semibold text-center cursor-pointer"
@@ -179,7 +262,7 @@ const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
                 No
               </div>
 
-             
+
             </div>
           </div>
         </div>

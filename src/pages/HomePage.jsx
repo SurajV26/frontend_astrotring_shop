@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 // Components
@@ -15,6 +15,7 @@ import Loader from "@/components/common/Loader";
 import { CATEGORIES } from "../constants/categories";
 import { addToCart, fetchCart } from "../redux/slices/cartSlice";
 import { fetchAllProducts } from '../redux/slices/productSlice';
+import { openCartDrawer } from "@/redux/slices/uiSlice";
 
 // ----- Helper Functions (for new API structure) -----
 const getProductPrice = (product) => Number(product?.after_price) || 0;
@@ -77,6 +78,7 @@ const groupedCategories = CATEGORIES.filter(c => c.id !== "all");
 const HomePage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate()
   const { items: products, loading, error } = useSelector((state) => state.product);
 
   // Filtering & UI state
@@ -182,6 +184,7 @@ const handleAddToCart = async ({ product_id, quantity, name, ratti,price ,image 
     await dispatch(addToCart({ product_id, quantity, name, ratti,price ,image })).unwrap();
     toast.success(`${name} added to cart!`);
     dispatch(fetchCart());
+    dispatch(openCartDrawer())
   } catch (err) {
     toast.error(err || 'Failed to add to cart');
   }

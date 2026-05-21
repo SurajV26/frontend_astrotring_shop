@@ -10,7 +10,15 @@ import { FastForward, Wallet, CreditCard, Landmark, } from "lucide-react";
 
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => {
+const PaymentStep = forwardRef(({ selectedAddressId,
+  onOrderComplete,
+  deliveryCharge,
+  grandTotal,
+  codCharge,
+  isCodLoading,
+  selectedPaymentMethod,
+  onPaymentMethodChange }, ref) => {
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items: cartItems, appliedCoupon, couponDiscount } = useSelector((state) => state.cart);
@@ -18,8 +26,10 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
   const [loading, setLoading] = useState(false);
   const [useWallet, setUseWallet] = useState(false);
   const [walletAmount, setWalletAmount] = useState(0);
-  const SHIPPING_CHARGES = +import.meta.env.VITE_SHIPING_CHARGES; // 
-  const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
+  // const SHIPPING_CHARGES = +import.meta.env.VITE_SHIPING_CHARGES; // 
+  // const MIN_FREE_SHIPPING = +import.meta.env.VITE_MINIMUM_ORDER_FOR_AVOID_SHIPING;
+
+  // const COD_SURCHARGE = +import.meta.env.VITE_COD_SURCHARGE;
 
   useImperativeHandle(ref, () => ({ placeOrder: handlePlaceOrder }));
 
@@ -34,18 +44,44 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
   }, [dispatch]);
 
   const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
-  const shipping = subtotal >= MIN_FREE_SHIPPING ? 0 : SHIPPING_CHARGES;
-  const grandTotal = subtotal + shipping - couponDiscount;
+  // const shipping = subtotal >= MIN_FREE_SHIPPING ? 0 : deliveryCharge;
+  // // const grandTotal = subtotal + shipping - couponDiscount;
 
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) return toast.error('Select delivery address');
     if (useWallet && walletAmount > walletBalance) return toast.error('Insufficient wallet balance');
     setLoading(true);
     try {
+
+      // --- COD flow ---
+      if (selectedPaymentMethod === 'cod') {
+        const { data } = await api.post('/store/place-cod-order', {
+          amount: grandTotal + codCharge,
+          coupon_code: appliedCoupon?.code || null,
+          delivery_charge: deliveryCharge,
+          wallet_amount: useWallet ? walletAmount : 0,
+          address_id: selectedAddressId,
+        });
+
+        console.log(data)
+
+        if (data.status) {
+          toast.success('Order placed successfully!');
+          navigate('/order-success', { state: { orderData: data.data.order_id } });
+          dispatch(clearCart());
+          onOrderComplete();
+        } else {
+          toast.error(data.message || 'COD order failed');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // --- Online (Razorpay) flow (your existing code, unchanged) ---
       const { data } = await api.post('/store/create-order', {
         amount: grandTotal,
         coupon_code: appliedCoupon?.code || null,
-        delivery_charge: shipping,
+        delivery_charge: deliveryCharge,
         wallet_amount: useWallet ? walletAmount : 0,
         address_id: selectedAddressId,
       });
@@ -59,7 +95,7 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
           razorpay_payment_id: 'wallet_payment',
           razorpay_signature: 'wallet_paid',
           coupon_code: appliedCoupon?.code || null,
-          delivery_charge: shipping,
+          delivery_charge: deliveryCharge,
           address_id: selectedAddressId,
           wallet_amount: useWallet ? walletAmount : 0,
           amount: grandTotal,
@@ -87,7 +123,7 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               coupon_code: appliedCoupon?.code || null,
-              delivery_charge: shipping,
+              delivery_charge: deliveryCharge,
               address_id: selectedAddressId,
               wallet_amount: useWallet ? walletAmount : 0,
               amount: grandTotal,
@@ -151,7 +187,10 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="radio"
-            checked
+            name="paymentMethod"
+            value="online"
+            checked={selectedPaymentMethod === 'online'}
+            onChange={() => onPaymentMethodChange('online')}
             className="mt-1 w-4 h-4 text-amber-600 accent-amber-600"
           />
 
@@ -191,8 +230,17 @@ const PaymentStep = forwardRef(({ selectedAddressId, onOrderComplete }, ref) => 
 
 
         <label className="flex items-center gap-2 cursor-pointer">
-          <div className="w-4 h-4  rounded-full border-1 border-gray-500" />
-          <span className="font-medium text-gray-400 text-sm">COD (Coming soon)</span>
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="cod"
+            checked={selectedPaymentMethod === 'cod'}
+            onChange={() => onPaymentMethodChange('cod')}
+            className="w-4 h-4 text-amber-600 accent-amber-600"
+          />
+          <span className="font-medium text-sm text-gray-800">
+            COD {isCodLoading ? '(fetching...)' : `(₹49)`}
+          </span>
         </label>
       </div>
       {/* <p className="text-sm text-gray-500 text-center">You will be redirected to Razorpay for secure payment.</p> */}

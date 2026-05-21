@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllProducts } from "../redux/slices/productSlice";
 import { addToCart, fetchCart } from "../redux/slices/cartSlice";
@@ -8,11 +8,13 @@ import ProductCard from "@/components/features/ProductCard";
 import { toast } from "react-toastify";
 import { categoryStaticData } from "../constants/categoryStaticData";
 import AccordionSection from "@/components/common/AccordionSection";
+import { openCartDrawer } from "@/redux/slices/uiSlice";
 
 /* ---------- MAIN ---------- */
 const CategoryPage = () => {
   const { slug } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate()
 
   const { items, loading, error } = useSelector((s) => s.product);
 
@@ -63,6 +65,8 @@ const handleAddToCart = async ({ product_id, quantity, name, ratti,price ,image 
     await dispatch(addToCart({ product_id, quantity, name, ratti,price ,image })).unwrap();
     toast.success(`${name} added to cart!`);
     dispatch(fetchCart());
+    dispatch(openCartDrawer())
+    // navigate('/cart');
   } catch (err) {
     toast.error(err || 'Failed to add to cart');
   }

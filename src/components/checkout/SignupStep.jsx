@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { api } from '../../redux/baseApi';
 import { toast } from 'react-toastify';
+import { userRegister } from '@/redux/slices/userAuthSlice';
 
 const SignupStep = ({ onSignupSuccess, onBackToLogin }) => {
   const [form, setForm] = useState({ name: '', email: '', country_code: '+91', mobile: '', terms_accepted: 0 });
   const [loading, setLoading] = useState(false);
+
+  
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -18,29 +20,23 @@ const SignupStep = ({ onSignupSuccess, onBackToLogin }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.terms_accepted) {
-      toast.error('You must accept the Terms & Conditions');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await api.post('/user/register', form);
-      if (res.data.token) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('role_id', res.data.role_id);
-        toast.success('Registration successful! Please login.');
-        onBackToLogin(); // go back to login step
-      } else {
-        toast.error('Registration failed');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!form.terms_accepted) {
+    toast.error('You must accept the Terms & Conditions');
+    return;
+  }
+  setLoading(true);
+  try {
+    await dispatch(userRegister(form)).unwrap();
+    toast.success('Registration successful! Please login.');
+    onBackToLogin(); // go back to login step
+  } catch (err) {
+    toast.error(err || 'Registration failed');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="space-y-5">
@@ -48,21 +44,13 @@ const SignupStep = ({ onSignupSuccess, onBackToLogin }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           name="name"
-          placeholder="Full name"
+          placeholder="Full name *"
           value={form.name}
           onChange={handleChange}
           className="w-full px-4 py-3 border rounded-xl border-gray-300 focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-300 transition"
           required
         />
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full px-4 py-3 border rounded-xl border-gray-300 focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-300 transition"
-          required
-        />
+      
         <div className="flex gap-2">
           <select
             name="country_code"
@@ -76,13 +64,21 @@ const SignupStep = ({ onSignupSuccess, onBackToLogin }) => {
           </select>
           <input
             name="mobile"
-            placeholder="Mobile number"
+            placeholder="Mobile number *"
             value={form.mobile}
             onChange={handleChange}
             className="flex-1 px-4 py-3 border rounded-xl border-gray-300 focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-300 transition"
             required
           />
         </div>
+          <input
+          name="email"
+          type="email"
+          placeholder="Enter your email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full px-4 py-3 border rounded-xl border-gray-300 focus:outline-none focus:ring-1 focus:ring-amber-300 focus:border-amber-300 transition"
+        />
 
         {/* Terms and conditions checkbox */}
         <div className="flex items-start gap-2">

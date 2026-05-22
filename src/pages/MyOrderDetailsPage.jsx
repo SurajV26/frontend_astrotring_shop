@@ -94,7 +94,7 @@ const MyOrderDetailsPage = () => {
           >
             <Printer className="w-4 h-4" /> Print Invoice
           </Link>}
-          {currentOrder.payment.status === "paid" && <Link
+          {currentOrder.payment.status === "success" && <Link
             to={`/invoice/${currentOrder.order_id}`}
             target="_blank"
             rel="noopener noreferrer"

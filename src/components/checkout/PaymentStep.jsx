@@ -1,17 +1,12 @@
 // src/components/checkout/PaymentStep.jsx
-import React, {
-  useState,
-  useEffect,
-  useImperativeHandle,
-  forwardRef,
-} from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { api } from "../../redux/baseApi";
-import { clearCart } from "../../redux/slices/cartSlice";
-import { fetchWallet } from "../../redux/slices/walletSlice";
-import { FastForward, Wallet, CreditCard, Landmark } from "lucide-react";
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { api } from '../../redux/baseApi';
+import { clearCart } from '../../redux/slices/cartSlice';
+import { fetchWallet } from '../../redux/slices/walletSlice';
+import { FastForward, Wallet, CreditCard, Landmark, Info, } from "lucide-react";
 
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
@@ -278,31 +273,29 @@ const PaymentStep = forwardRef(
               className="mt-1 w-4 h-4 text-amber-600 accent-amber-600"
             />
 
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm text-gray-800">
-                  Cash on Delivery
-                </span>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="cod"
+            checked={selectedPaymentMethod === 'cod'}
+            onChange={() => onPaymentMethodChange('cod')}
+            className="w-4 h-4 text-amber-600 accent-amber-600"
+          />
+          <span className="font-medium text-sm text-gray-800">COD</span>
 
-                {!isCodLoading && codCharge > 0 && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 border border-red-100">
-                    <CreditCard size={12} className="text-red-500" />
-                    <span className="text-xs font-medium text-red-600">
-                      + ₹{codCharge}
-                    </span>
-                  </div>
-                )}
-              </div>
+          <details className="relative inline-flex">
+            <summary className="list-none inline-flex cursor-pointer">
+              <Info className="w-4 h-4 text-gray-400 hover:text-amber-500 transition-colors" />
+            </summary>
+            <div className="absolute z-10 bottom-full left-2  w-64 p-2 bg-gray-800 text-white text-[10px] rounded-tl-2xl rounded-br-2xl shadow-lg">
 
-              {!isCodLoading && codCharge > 0 && (
-                <span className="text-xs text-gray-500">
-                  A convenience / handling fee is applicable on Cash on Delivery orders.
-                </span>
-              )}
+              <p className="mb-1">A convenience / handling fee is applicable on Cash on Delivery.</p>
+              <p>Cash on Delivery isn't yet available for all pin codes.</p>
+              <p>COD charges will not be refundable.</p>
             </div>
-          </label>
-        </div>
-        {/* <p className="text-sm text-gray-500 text-center">You will be redirected to Razorpay for secure payment.</p> */}
+          </details>
+        </label>
       </div>
     );
   },

@@ -1,5 +1,9 @@
 {
   "appId": "com.astrotringshop.app",
   "appName": "AstroTring Shop",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://astrotring.shop",
+    "cleartext": true
+  }
 }

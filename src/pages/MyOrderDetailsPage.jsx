@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -35,37 +35,32 @@ const MyOrderDetailsPage = () => {
   const { isLoggedIn } = useSelector((state) => state.userAuth);
   const [cancelling, setCancelling] = useState(false);
   const invoiceRef = useRef(null);
+  const [downloadInvoiceLoading, setDownloadInvoiceLoading] = useState(false);
 
   const handleDownloadInvoice = async () => {
-    // Check if we have the order and the hidden element ready
-    if (!currentOrder || !invoiceRef.current) {
-      toast.error("Invoice data is not ready.");
+    if (!order || !invoiceRef.current) {
+      toast.error("Invoice data not ready.");
       return;
     }
 
-    const element = invoiceRef.current; // This is your hidden OrderInvoice component
+    const element = invoiceRef.current;
+    setDownloadInvoiceLoading(true);
 
     try {
-      // Render the hidden element onto a canvas
+      // Step 1: Generate PDF using html2canvas + jsPDF
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher scale = better quality
-        useCORS: true, // Handle images from other domains if needed
+        scale: 2,
+        useCORS: true,
         logging: false,
       });
-
-      //  Convert the canvas to an image
       const imgData = canvas.toDataURL("image/png");
-
-      // 3. Create a new PDF and add the image to it
       const pdf = new jsPDF({
         unit: "mm",
         format: "a4",
         orientation: "portrait",
       });
-
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
       pdf.addImage(
         imgData,
         "PNG",
@@ -77,11 +72,23 @@ const MyOrderDetailsPage = () => {
         "FAST",
       );
 
-      // 4. Save the PDF
-      pdf.save(`Invoice_${currentOrder.order_number}.pdf`);
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      toast.error(`Download failed: ${error.message}`);
+      // Step 2: Convert PDF to Data URL (Base64) – No blob involved
+      const pdfDataUrl = pdf.output("dataurlstring");
+
+      // Step 3: Create a temporary anchor and trigger download
+      const link = document.createElement("a");
+      link.href = pdfDataUrl;
+      link.download = `Invoice_${order.order_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // toast.success("Invoice downloaded successfully!");
+    } catch (err) {
+      console.error("PDF Generation Error:", err);
+      toast.error(`Download failed: ${err.message || "Download failed"}`);
+    } finally {
+      setDownloadInvoiceLoading(false);
     }
   };
 
@@ -164,7 +171,8 @@ const MyOrderDetailsPage = () => {
               onClick={handleDownloadInvoice}
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium cursor-pointer"
             >
-              <Download className="w-4 h-4" /> Download Invoice
+              <Download className="w-4 h-4" />{" "}
+              {downloadInvoiceLoading ? "Downloading..." : "Download Invoice"}
             </button>
           </div>
 
@@ -175,9 +183,11 @@ const MyOrderDetailsPage = () => {
                 <p className="text-sm text-gray-500">
                   Order Number : #{order.order_number}
                 </p>
-               {!isCod && <p className="text-sm text-gray-500">
-                  Transaction ID : #{order?.payment?.transaction_id}
-                </p>}
+                {!isCod && (
+                  <p className="text-sm text-gray-500">
+                    Transaction ID : #{order?.payment?.transaction_id}
+                  </p>
+                )}
                 <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   Order On :{" "}
@@ -192,13 +202,17 @@ const MyOrderDetailsPage = () => {
                   <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                     <CheckCircle className="w-3 h-3 text-green-500" /> Delivered
                     On :{" "}
-                    {new Date(order.timestamps.delivered_at).toLocaleString()}
+                    {new Date(order.timestamps.delivered_at).toLocaleString(
+                      "en-IN",
+                    )}
                   </p>
                 )}
                 {order.timestamps?.cancelled_at && (
                   <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
                     <XCircle className="w-3 h-3 text-red-500" /> Cancelled On :{" "}
-                    {new Date(order.timestamps.cancelled_at).toLocaleString()}
+                    {new Date(order.timestamps.cancelled_at).toLocaleString(
+                      "en-IN",
+                    )}
                   </p>
                 )}
               </div>
@@ -375,7 +389,11 @@ const MyOrderDetailsPage = () => {
               <p className="text-gray-600">
                 Mode: {order?.payment?.mode || "Online"}
               </p>
-             {!isCod && <p className="text-gray-600">Payment Status : {order?.payment?.status}</p>}
+              {!isCod && (
+                <p className="text-gray-600">
+                  Payment Status : {order?.payment?.status}
+                </p>
+              )}
             </div>
           </div>
         </div>

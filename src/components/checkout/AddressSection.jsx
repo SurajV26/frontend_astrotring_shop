@@ -15,6 +15,7 @@ const AddressSection = () => {
   
   // Redux global state
   const { addresses, loading } = useSelector((state) => state.address);
+  const { isLoggedIn } = useSelector((state) => state.userAuth);
   
   // Local active states
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -41,24 +42,29 @@ const AddressSection = () => {
   });
 
   // Fetch saved addresses on mount
+  // useEffect(() => {
+  //   if (!hasFetched.current && !loading) {
+  //     hasFetched.current = true;
+  //     dispatch(fetchAddresses());
+  //   //    if (addresses.length === 0) {
+  //   // setShowNewForm(true);
+  // // }
+  //   }
+  // }, [dispatch, loading,isLoggedIn]);
+
   useEffect(() => {
-    if (!hasFetched.current && !loading) {
-      hasFetched.current = true;
-      dispatch(fetchAddresses());
-    //    if (addresses.length === 0) {
-    // setShowNewForm(true);
-  // }
-    }
-  }, [dispatch, loading]);
+  // ✅ सिर्फ Logged In User के लिए Address Fetch करें
+  if (isLoggedIn ) {
+    dispatch(fetchAddresses());
+  }
+}, [isLoggedIn, dispatch]);
 
 // जब addresses API से आ जाएं, तो check करें कि खाली हैं या नहीं
 useEffect(() => {
   // अगर addresses लोड हो चुके हैं (loading false है) और addresses खाली हैं
   if (!loading && addresses.length === 0) {
     setShowNewForm(true);  // कोई address नहीं → form दिखाओ
-  } else if (!loading && addresses.length > 0) {
-    setShowNewForm(false); // addresses हैं → list दिखाओ
-  }
+  } 
 }, [addresses, loading]);
 
   // Debouncer Cleanup Hook

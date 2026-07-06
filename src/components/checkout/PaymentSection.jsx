@@ -20,6 +20,7 @@ import { closeCartDrawer, closeCheckout } from "@/redux/slices/uiSlice";
 import {
   calculateDeliveryCharge,
   calculateCodCharge,
+  clearDeliveryCharge
 } from "@/redux/slices/extraCheckoutChargeSlice";
 
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
@@ -45,7 +46,7 @@ const PaymentSection = () => {
     loading: globalPaymentLoading,
   } = useSelector((state) => state.payment);
 
-  console.log(user)
+  console.log(appliedCoupon)
 
   const cartTotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -59,16 +60,33 @@ const PaymentSection = () => {
   const finalPayableAmount =
     selectedPaymentMethod === "cod"
       ? cartTotal + deliveryCharge + codCharge - couponDiscount
-      : cartTotal + deliveryCharge - couponDiscount; // Online में COD charge नहीं
+      : cartTotal + deliveryCharge - couponDiscount; // no cod charge in prepaid order
 
-  console.log(selectedAddressId);
+  // console.log(selectedAddressId);
+// PaymentSection.jsx
 
-  useEffect(() => {
-    if (selectedAddressId || selectedPaymentMethod) {
-      dispatch(calculateDeliveryCharge({ address_id: selectedAddressId,coupon_code:appliedCoupon?.code }));
-      dispatch(calculateCodCharge({ address_id: selectedAddressId }));
-    }
-  }, [selectedAddressId, dispatch, selectedPaymentMethod]);
+useEffect(() => {
+  if (!selectedAddressId || !isLoggedIn) {
+    dispatch(clearDeliveryCharge());
+  }
+}, [selectedAddressId, dispatch]);
+
+// ✅ Delivery Charge – जब Address और Cart दोनों हों
+useEffect(() => {
+  if ( isLoggedIn && selectedAddressId && items.length > 0) {
+    dispatch(calculateDeliveryCharge({ 
+      address_id: selectedAddressId, 
+      coupon_code: appliedCoupon?.code 
+    }));
+  }
+}, [isLoggedIn, selectedAddressId, items.length, dispatch, appliedCoupon?.code]);
+
+// ✅ COD Charge – जब COD Selected हो, Address हो, Cart हो
+useEffect(() => {
+  if (  items.length > 0 && selectedPaymentMethod === "cod") {
+    dispatch(calculateCodCharge({ address_id: selectedAddressId }));
+  }
+}, [isLoggedIn, items.length, dispatch, selectedPaymentMethod]);
 
   // Fallback to safety if address selection hasn't pre-populated grandTotal yet
   // const rawTotal = grandTotal || 0;
@@ -224,7 +242,7 @@ const PaymentSection = () => {
         razorpay.open();
       } catch (err) {
         console.error(" Online payment error:", err);
-        toast.error(err?.message || "Could not initiate payment.");
+        toast.error(err || "Could not initiate payment.");
       }
       return;
     }
@@ -271,7 +289,7 @@ const PaymentSection = () => {
         </label>
 
         {/* Pathway 2: Cash on Delivery Channel */}
-        <label
+        {appliedCoupon?.payment_type !== "prepaid" && <label
           className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-all ${selectedPaymentMethod === "cod" ? "border-amber-500 bg-amber-500/5 ring-1 ring-amber-500" : "border-gray-200 bg-white hover:border-gray-300"}`}
         >
           <input
@@ -289,7 +307,7 @@ const PaymentSection = () => {
               A non‑refundable COD charge of Rs.49 is required.
             </p>
           </div>
-        </label>
+        </label>}
       </div>
 
       {/* Structured Billing Calculation Display Box */}
@@ -307,7 +325,7 @@ const PaymentSection = () => {
             <span>+ ₹{codCharge}</span>
           </div>
         )} */}
-        <div className="flex justify-between items-center text-sm font-extrabold text-gray-900 pt-0.5">
+        <div className="flex justify-between items-center text-sm font-bold text-gray-900 pt-0.5 px-4 ">
           <span>Payable Amount:</span>
           <span className="text-amber-500 text-base tracking-wide">
             ₹
@@ -317,13 +335,12 @@ const PaymentSection = () => {
             })}
           </span>
         </div>
-      </div>
-
+      
       {/* Primary Conversion Submission CTA Anchor */}
       <button
         onClick={handleCheckoutProcess}
         disabled={globalPaymentLoading || isDeliveryLoading || isCodLoading}
-        className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-100 disabled:text-gray-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-[0.99] cursor-pointer"
+        className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-100 disabled:text-gray-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-md transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-[0.99] cursor-pointer"
       >
         {globalPaymentLoading ? (
           <>
@@ -343,6 +360,9 @@ const PaymentSection = () => {
           </>
         )}
       </button>
+      </div>
+
+      
     </div>
   );
 };

@@ -44,7 +44,7 @@ const HeroBanner = () => {
   if (!banners.length) return null;
 
   return (
-    <div className="w-full h-full mx-auto overflow-hidden border border-white rounded-sm">
+    <div className=" relative w-full h-full md:h-[72vh] mx-auto overflow-hidden border border-white rounded-sm">
       {sortedBanners.length > 0 && (
         <div
           className="flex h-full transition-transform duration-700 ease-in-out"
@@ -58,7 +58,7 @@ const HeroBanner = () => {
                   autoPlay
                   muted
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                   onEnded={() =>
                     setCurrentIndex((prev) => (prev + 1) % sortedBanners.length)
                   }
@@ -74,6 +74,23 @@ const HeroBanner = () => {
                 
               )}
             </div>
+          ))}
+        </div>
+      )}
+
+            {sortedBanners.length > 1 && (
+        <div className="absolute bottom-3 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10 ">
+          {sortedBanners.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-3 h-3 rounded transition-all duration-300 ${
+                index === currentIndex
+                  ? 'bg-amber-500 scale-110 shadow-md'
+                  : 'bg-white/50 hover:bg-white/70'
+              } cursor-pointer`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
           ))}
         </div>
       )}

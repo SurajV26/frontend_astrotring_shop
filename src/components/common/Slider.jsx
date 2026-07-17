@@ -12,7 +12,7 @@ const Slider = ({ children, slideCount, showBtn=true }) => {
   const nextRef = useRef(null);
 
   return (
-    <div className="relative">
+    <div className="relative ">
       {/* Navigation buttons */}
       {showBtn &&<button
         ref={prevRef}
@@ -28,6 +28,7 @@ const Slider = ({ children, slideCount, showBtn=true }) => {
       </button>}
 
       <Swiper
+      
         modules={[Navigation, Pagination, Autoplay, Mousewheel]}
         spaceBetween={10}
         loop={true}

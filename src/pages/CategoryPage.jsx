@@ -97,21 +97,21 @@ useEffect(() => {
       {/* ---------- HEADER ---------- */}
       <div className="border-b border-gray-300 flex items-center justify-center">
         <div className="max-w-full mx-auto px-4 pb-6">
-          <h1 className="text-5xl font-medium text-gray-900 capitalize">
+          <h1 className="text-5xl font-medium text-gray-900 capitalize uppercase">
             {slug === "all" ? "All Products" : slug}
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-gray-500 mt-1 text-sm text-center">
             Discover authentic & high-quality items
           </p>
         </div>
       </div>
 
       {/* ---------- PRODUCTS & INFO SECTIONS (full width) ---------- */}
-      <div className="max-w-7xl mx-auto px-4 py-20">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
         {products.length === 0 ? (
           <p className="text-center font-bold text-3xl  text-orange-700">Comming Soon...</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {products.map((product) => (
               <ProductCard
                 key={product.id}

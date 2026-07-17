@@ -7,7 +7,7 @@ import Slider from "../common/Slider";
 const getProductPrices = (product) => {
   let afterPrice = 0;
   let beforePrice = 0;
-  
+
   // Check if product has ratti_options (gemstone)
   if (product?.ratti_options && product.ratti_options.length > 0) {
     // For gemstones: take the first ratti option's price
@@ -19,7 +19,7 @@ const getProductPrices = (product) => {
     afterPrice = parseFloat(product?.after_price) || 0;
     beforePrice = parseFloat(product?.before_price) || 0;
   }
-  
+
   return { afterPrice, beforePrice };
 };
 
@@ -37,8 +37,8 @@ const BestSellers = () => {
   if (!products.length) return null;
 
   return (
-    <div className="mb-6">
-      <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-stone-900 mb-4">
+    <div className="">
+      <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-stone-900 mb-2">
         Best Sellers
       </h2>
 
@@ -48,35 +48,34 @@ const BestSellers = () => {
           const discount = getDiscountPercent(beforePrice, afterPrice);
           const imageUrl = product.image || product.images?.[0]?.image || "";
 
-         
-
           return (
             <Link
               key={product.id}
-              to={`/product/${product?.slug}`} 
-              className="bg-white md:rounded-sm border border-gray-100 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+              to={`/product/${product?.slug}`}
+              className="flex flex-col h-full bg-white rounded-sm border border-gray-100 shadow-md hover:shadow-lg transition-shadow"
             >
               <img
                 src={imageUrl}
                 alt={product.name}
-                className="w-full h-[150px] object-cover rounded-sm md:rounded-sm mb-2"
+                className="w-full h-[150px] object-cover flex-shrink-0 rounded-sm"
               />
-              <div className="text-xs font-bold truncate">{product.name}</div>
-
-              <div className="flex items-baseline gap-1 flex-wrap">
-                <span className="text-xs font-semibold text-black">
-                  ₹{afterPrice.toLocaleString()}
-                </span>
-                {beforePrice > afterPrice && (
-                  <span className="text-[10px] text-gray-400 line-through">
-                    ₹{beforePrice.toLocaleString()}
+              <div className="flex flex-col flex-1 p-2">
+                <div className="text-xs font-bold truncate">{product.name}</div>
+                <div className="flex items-baseline gap-1 flex-wrap mt-1">
+                  <span className="text-xs font-semibold text-black">
+                    ₹{afterPrice.toLocaleString()}
                   </span>
-                )}
-                {discount && (
-                  <span className="text-[10px] text-amber-600 font-semibold">
-                    {discount}% OFF
-                  </span>
-                )}
+                  {beforePrice > afterPrice && (
+                    <span className="text-[10px] text-gray-400 line-through">
+                      ₹{beforePrice.toLocaleString()}
+                    </span>
+                  )}
+                  {discount && (
+                    <span className="text-[10px] text-amber-600 font-semibold">
+                      {discount}% OFF
+                    </span>
+                  )}
+                </div>
               </div>
             </Link>
           );

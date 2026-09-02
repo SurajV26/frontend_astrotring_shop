@@ -237,6 +237,8 @@ const ProductDetailsPage = () => {
   const ratingValue = parseFloat(product?.rating_avg) || 0;
   const reviewsCount = product?.rating_count || 0;
 
+   const subName = product?.sub_name || [];
+
   // --- Media: objects with url, type, and thumbnail ---
   let mediaItems = [];
   if (product?.image) {
@@ -433,7 +435,13 @@ const ProductDetailsPage = () => {
                 Home
               </a>
             </li>
-            <li className="mx-1">/</li>
+            <li className="mx-1">
+              <ChevronRight
+                size={16}
+                strokeWidth={2.5}
+                className="text-gray-400"
+              />
+            </li>
             <li className="text-amber-700 font-medium truncate max-w-[200px]">
               {product?.name}
             </li>
@@ -544,11 +552,31 @@ const ProductDetailsPage = () => {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 {product?.name}
               </h1>
-              <div className="flex items-center gap-3 mt-2">
-                {/* <StarRating value={ratingValue} size={16} />
+              {subName &&
+                subName.map((name, idx) => {
+                  // 1. Random background classes ki list
+                  const bgClasses = [
+                    "bg-amber-100  border-amber-200",
+                    "bg-gray-300  border-blue-200",
+                  ];
+
+                  // 2. Index ke basis par alag background select karna
+                  const randomBg = bgClasses[idx % bgClasses.length];
+
+                  return (
+                    <button
+                      key={idx}
+                      className={`text-sm mt-3 rounded-full font-light text-gray-700 px-4 py-1 border m-1 ${randomBg}`}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              {/* <div className="flex items-center gap-3 mt-2">
+                <StarRating value={ratingValue} size={16} />
                 <span className="text-sm text-gray-600">
                   {ratingValue.toFixed(1)} ({reviewsCount} reviews)
-                </span> */}
+                </span>
 
                 <div className="flex items-center gap-1 text-green-600">
                  <BadgePercent size={20} className="font-bold animate-spin"/>
@@ -561,7 +589,8 @@ const ProductDetailsPage = () => {
                 <span className={`text-lg font-medium ${stockStatus.color}`}>
                   {stockStatus.text}
                 </span>
-              </div>
+              </div> */}
+              
             </div>
 
             {/* Pricing */}
@@ -579,6 +608,11 @@ const ProductDetailsPage = () => {
                   {discountText}
                 </span>
               )}
+
+              <span className="text-lg text-gray-400">|</span>
+                <span className={`text-lg font-medium ${stockStatus.color}`}>
+                  {stockStatus.text}
+                </span>
             </div>
 
             {/* Offers Section */}

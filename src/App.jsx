@@ -1,10 +1,9 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import { lazy, useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { userProfile } from "./redux/slices/userAuthSlice";
-// import Loader from "./components/common/Loader";
 import Layout from "./components/layout/Layout";
-import HomePage from "./pages/HomePage";
+// import HomePage from "./pages/HomePage";
 // import CategoryPage from "./pages/CategoryPage";
 // import ProfilePage from "./pages/ProfilePage";
 
@@ -19,14 +18,16 @@ import HomePage from "./pages/HomePage";
 // import TrackMyOrderPage from "./pages/TrackMyOrderPage";
 // import ComingSoon from "./components/common/ComingSoon";
 import GoogleTagManager from "./components/common/GoogleTagManager";
+import Loader from "./components/common/Loader";
 // import ContactUsPage from "./pages/legal/ContactUsPage";
 // import OrderInvoice from "./pages/OrderInvoice";
 // import BecomeAnAffiliate from "./components/affiliate/BecomeAnAffiliate";
 // import AffiliateSignup from "./components/affiliate/AffiliateSignup";
-// import AffiliateLayout from "./components/layout/affiliatelayout/AffiliateLayout";
-
+// import AffiliateLayout from "./components/layout/affiliatelayout/AffiliateLayout"
 // Lazy load all pages
 
+
+const HomePage = lazy(() => import("./pages/HomePage"));
 const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
 // const CartPage = lazy(() => import("./pages/CartPage"));
 const DisclaimerPage = lazy(() => import("./pages/legal/DisclaimerPage"));
@@ -83,6 +84,7 @@ function App() {
   return (
     <>
       <GoogleTagManager />
+      <Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -142,6 +144,7 @@ function App() {
           <Route path="affiliate-signup" element={<AffiliateSignup />} />
         </Route>
       </Routes>
+      </Suspense>
     </>
   );
 }

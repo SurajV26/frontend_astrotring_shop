@@ -1,5 +1,6 @@
 // src/components/checkout/PaymentSection.jsx
 import React, { useEffect, useState } from "react";
+import { getAdgebraTrackingId } from "@/utils/adgebraTracking";
 import { useSelector, useDispatch } from "react-redux";
 import { ArrowRight, CreditCard, Info, Loader2 } from "lucide-react";
 
@@ -161,6 +162,7 @@ const PaymentSection = () => {
    * Evaluates operational checks and routes order processing to matching transactional handlers
    */
   const handleCheckoutProcess = async () => {
+    const adgebraTrackingId = getAdgebraTrackingId();
     // 1. Edge-case form protection rules
     if (!isLoggedIn) {
       toast.error("Please log in!");
@@ -185,6 +187,7 @@ const PaymentSection = () => {
             delivery_charge: deliveryCharge || 0,
             wallet_amount: 0, // Defaulted to zero for standard forms
             address_id: selectedAddressId,
+            adgebra_tracking_id: adgebraTrackingId,
           }),
         ).unwrap();
 
@@ -224,6 +227,7 @@ const PaymentSection = () => {
           createAdvanceCodOrder({
             address_id: selectedAddressId,
             coupon_code: appliedCoupon?.code || null,
+            adgebra_tracking_id: adgebraTrackingId,
             // delivery_charge, amount etc. are not sent; backend calculates advance
           }),
         ).unwrap();
@@ -270,6 +274,7 @@ const PaymentSection = () => {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
+                  adgebra_tracking_id: adgebraTrackingId,
                 }),
               ).unwrap();
               console.log("verifyAdvCod", verifyAdvCod);
@@ -320,6 +325,7 @@ const PaymentSection = () => {
             delivery_charge: deliveryCharge || 0,
             wallet_amount: 0,
             address_id: selectedAddressId,
+            adgebra_tracking_id: adgebraTrackingId,
           }),
         ).unwrap();
 
@@ -358,6 +364,7 @@ const PaymentSection = () => {
                 address_id: selectedAddressId,
                 wallet_amount: 0,
                 amount: finalPayableAmount,
+                adgebra_tracking_id: adgebraTrackingId,
               };
               // console.log(" Verifying payment...", payload);
               const verifyRes = await dispatch(
